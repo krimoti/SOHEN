@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dazura Expert v15.3</title>
+    <title>Dazura Expert v15.4</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+Hebrew:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -115,7 +115,7 @@
 ```
 <div class="header">
     <span class="header-title">🛠️ Dazura Expert</span>
-    <span class="badge">v15.3 Pro</span>
+    <span class="badge">v15.4 Pro</span>
 </div>
 
 <div class="tabs">
@@ -254,13 +254,48 @@ function updateKeyStatus(key) {
 
 function buildPrompt(parts) {
     const inv = JSON.parse(localStorage.getItem('dazura_inventory') || '[]');
-    const invText = inv.length ? '\n\nמלאי קיים:\n' + inv.map(i => `${i.part}: ${i.qty} יח׳`).join('\n') : '';
+    const invText = inv.length ? '\n\nמלאי קיים:\n' + inv.map(i => `${i.part}: ${i.qty} יח\u05F3`).join('\n') : '';
+
+    const sys = [
+        'אתה מומחה טכני בכיר לחיווט תעשייתי, קונקטורים ו-crimping (TE Connectivity, Molex, Deutsch, Amphenol, JST וכו\u05F3).',
+        '',
+        'עבור כל מק"ט בצע:',
+        '1. זיהוי הקונקטור – שם מלא, סדרה, יצרן, תיאור קצר.',
+        '2. רשימת הפינים – מק"טים מדויקים של כל הפינים המשוייכים.',
+        '3. חתך חוטים (AWG) – טווח מדויק, ציין wire barrel / insulation.',
+        '4. תמונות – תיאור + קישור לתמונת housing ולתמונת הפין.',
+        '5. Pin Layout – פריסה (1xN, 2xN...) + טבלת מיקום פינים.',
+        '6. כלי לחיצה – Hand Tool + Applicator (מספרי חלק), Die/Locator/Crimp height.',
+        '7. זמן תקן ללחיצה – שניות ללחיצה אחת, זמן מלא, ידני/מכונה.',
+        '',
+        'פורמט תשובה מחייב:',
+        'מק"ט: [מק"ט]',
+        'קונקטור: [שם + סדרה + יצרן]',
+        'פינים משוייכים:',
+        '- פין 1: [מק"ט] → AWG: [טווח]',
+        'טווח AWG מומלץ: [טווח]',
+        'תמונות:',
+        '- קונקטור: [תיאור + קישור]',
+        '- פין: [תיאור + קישור]',
+        'Pin Layout:',
+        '[טבלה]',
+        'כלי לחיצה מומלצים:',
+        '- Hand Tool: [מספר חלק]',
+        '- Applicator: [מספר חלק]',
+        '- הגדרות Crimp: [crimp height / die code]',
+        'זמן תקן ללחיצה:',
+        '- זמן ללחיצה אחת: X שניות',
+        '- זמן מלא (כל הפינים): Y שניות / דקות',
+        'מקורות / Datasheet: [קישורים]',
+        '',
+        'אם חסר מידע – ציין "מידע לא זמין". אל תמציא. השתמש בנתונים רשמיים של היצרן.'
+    ].join('\n');
 
     const prompts = {
-        bom: `אתה מומחה הנדסת חיווט ו-BOM. נתח את המק"טים ולכל אחד ציין: שם+יצרן, סוג, מתח/זרם מקסימלי, שימושים, הערות. ללא Markdown, בעברית.\n\n${parts}${invText}`,
-        quick: `זהה בקצרה (שורה לכל מק"ט: מק"ט | שם | יצרן | סוג). בעברית.\n\n${parts}`,
-        alt: `מצא 2-3 חלופות לכל מק"ט עם מספר חלק, יצרן, רמת תאימות. בעברית, ללא Markdown.\n\n${parts}`,
-        stock: `השווה מק"טים למלאי הקיים. לכל מק"ט: כמות מבוקשת, כמות במלאי, עודף/חוסר. בעברית.\n\n${parts}${invText || '\n\nלא הוגדר מלאי.'}`
+        bom:   `${sys}\n\nמק"טים לניתוח:\n${parts}`,
+        quick: `${sys}\n\nסרוק במהירות – שורה אחת לכל מק"ט: מק"ט | שם | יצרן | סדרה | הערה.\n\nמק"טים:\n${parts}`,
+        alt:   `${sys}\n\nמצא 2-3 חלופות לכל מק"ט: מספר חלק, יצרן, תאימות (ישירה/פונקציונלית/חלקית), הערה.\n\nמק"טים:\n${parts}`,
+        stock: `${sys}\n\nהשווה למלאי: כמות מבוקשת, כמות במלאי, עודף/חוסר, המלצה.\n\nמק"טים:\n${parts}${invText || '\n\nלא הוגדר מלאי.'}`
     };
     return prompts[currentMode];
 }
